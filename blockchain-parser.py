@@ -38,9 +38,9 @@ def merkle_root(lst): # https://gist.github.com/anonymous/7eb080a67398f648c1709e
         lst.append(lst[-1])
     return merkle_root([hash_pair(x,y) for x, y in zip(*[iter(lst)]*2)])
 
-dirA = '/home/gcb/data/main/blocks/' # Directory where blk*.dat files are stored
+dirA = 'C:/dev/blockchain-parser/' # Directory where blk*.dat files are stored
 #dirA = sys.argv[1]
-dirB = '/home/gcb/blockchain-parser/hash/' # Directory where to save parsing results
+dirB = 'C:/dev/blockchain-parser/hash/' # Directory where to save parsing results
 #dirA = sys.argv[2]
 
 fList = os.listdir(dirA)
@@ -351,10 +351,14 @@ for i in fList:
             RawTX = ''
         a += 1
         tx_hashes = [h.decode('hex') for h in tx_hashes]
-        tmpHex = merkle_root(tx_hashes).encode('hex').upper()
-        if tmpHex != MerkleRoot:
-            print ('Merkle roots does not match! >',MerkleRoot,tmpHex)
-        tmpHex = ''
+        if MerkleRoot != '0000000000000000000000000000000000000000000000000000000000000000':
+
+            tmpHex = merkle_root(tx_hashes).encode('hex').upper()
+            if tmpHex != MerkleRoot:
+                print ('Merkle roots does not match! >',MerkleRoot,tmpHex)
+            tmpHex = ''
+        else:
+            break
     f.close()
     f = open(dirB + nameRes,'w')
     for j in resList:
