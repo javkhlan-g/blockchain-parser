@@ -1,12 +1,56 @@
-# -*- coding: utf-8 -*-
+    # -*- coding: utf-8 -*-
 #
 # Blockchain parser
 # Copyright (c) 2015-2019 Denis Leonov <466611@gmail.com>
 #
 
 import os
-import datetime
+#import datetime
 import hashlib
+from datetime import datetime
+import base58 as base58
+import binascii
+
+
+def startsWithOpNCode(pub):
+  try:
+    intValue = int(pub[0:2], 16)
+    if intValue >= 1 and intValue <= 75:
+      return True
+  except:
+    pass
+  return False
+
+def publicKeyDecoder(pub):
+  if pub.lower().startswith('76a914'):
+    pub = pub[6:-4]
+    result = (b'\x00') + binascii.unhexlify(pub)
+    h5 = hashlib.sha256(result)
+    h6 = hashlib.sha256(h5.digest())
+    result += h6.digest()[:4]
+    return base58.b58encode(result)
+  elif pub.lower().startswith('a9'):
+    return ""
+  elif startsWithOpNCode(pub):
+    pub = pub[2:-2]
+    h3 = hashlib.sha256(binascii.unhexlify(pub))
+    h4 = hashlib.new('ripemd160', h3.digest())
+    result = (b'\x00') + h4.digest()
+    h5 = hashlib.sha256(result)
+    h6 = hashlib.sha256(h5.digest())
+    result += h6.digest()[:4]
+    return base58.b58encode(result)
+  return ""
+
+def publicKeyDecode(pub):
+    pub = pub[2:-2]
+    hash1 = hashlib.sha256(binascii.unhexlify(pub))
+    hash2 = hashlib.new('ripemd160', hash1.digest())
+    padded = (b'\x00') + hash2.digest()
+    hash3 = hashlib.sha256(padded)
+    hash4 = hashlib.sha256(hash3.digest())
+    padded += hash4.digest()[:4]
+    return base58.b58encode(padded)
 
 def HexToInt(s):
     t = ''
@@ -51,10 +95,11 @@ for i in fList:
     nameSrc = i
     nameRes = nameSrc.replace('.dat','.txt')
     resList = []
+    resList = []
     a = 0
     t = dirA + nameSrc
-    resList.append('Start ' + t + ' in ' + str(datetime.datetime.now()))
-    print ('Start ' + t + ' in ' + str(datetime.datetime.now()))
+    resList.append('Start ' + t + ' in ' + str(datetime.now()))
+    print ('Start ' + t + ' in ' + str(datetime.now()))
     f = open(t,'rb')
     tmpHex = ''
     fSize = os.path.getsize(t)
@@ -70,7 +115,7 @@ for i in fList:
             b = f.read(1)
             b = b.encode('hex').upper()
             tmpHex = b + tmpHex
-        resList.append('Block size = ' + tmpHex)
+        resList.append('Block size = ' + str(int(tmpHex,16)) + ' bytes')
         tmpHex = ''
         tmpPos3 = f.tell()
         while f.tell() != tmpPos3 + 80:
@@ -109,19 +154,19 @@ for i in fList:
             b = f.read(1)
             b = b.encode('hex').upper()
             tmpHex = b + tmpHex
-        resList.append('Time stamp > ' + tmpHex)
+        resList.append('Time stamp  ' + datetime.utcfromtimestamp(int(tmpHex,16)).strftime('%Y-%m-%d %H:%M:%S'))
         tmpHex = ''
         for j in range(4):
             b = f.read(1)
             b = b.encode('hex').upper()
             tmpHex = b + tmpHex
-        resList.append('Difficulty = ' + tmpHex)
+        resList.append('nBits = ' + str(int(tmpHex,16)))
         tmpHex = ''
         for j in range(4):
             b = f.read(1)
             b = b.encode('hex').upper()
             tmpHex = b + tmpHex
-        resList.append('Random number > ' + tmpHex)
+        resList.append('Nonce ' + str(int(tmpHex,16)))
         tmpHex = ''
         b = f.read(1)
         bInt = int(b.encode('hex'),16)
@@ -197,7 +242,7 @@ for i in fList:
                     b = f.read(1)
                     b = b.encode('hex').upper()
                     tmpHex = b + tmpHex
-                resList.append('N output = ' + tmpHex)
+                    resList.append('N output = ' + str(int(tmpHex,16)))
                 RawTX = RawTX + reverse(tmpHex)
                 tmpHex = ''
                 b = f.read(1)
@@ -219,18 +264,23 @@ for i in fList:
                 tmpHex = tmpHex + tmpB
                 RawTX = RawTX + reverse(tmpHex)
                 tmpHex = ''
+
                 for j in range(scriptLength):
                     b = f.read(1)
                     b = b.encode('hex').upper()
                     tmpHex = tmpHex + b
                 resList.append('Input script = ' + tmpHex)
+                # check coinbase or regular transaction. coinbase always 1
+                if txCount > 1 :
+                    walletAddress = publicKeyDecoder(tmpHex)
+                    resList.append('sender address = ' + walletAddress)
                 RawTX = RawTX + tmpHex
                 tmpHex = ''
                 for j in range(4):
                     b = f.read(1)
                     b = b.encode('hex').upper()
                     tmpHex = tmpHex + b
-                resList.append('sequenceNumber = ' + tmpHex)
+                resList.append('sequenceNumber = ' + str(int(tmpHex,16)) )
                 RawTX = RawTX + tmpHex
                 tmpHex = ''
             b = f.read(1)
@@ -284,8 +334,12 @@ for i in fList:
                     b = f.read(1)
                     b = b.encode('hex').upper()
                     tmpHex = tmpHex + b
-                resList.append('Value = ' + Value)
+                resList.append('Value = ' + str(int(Value,16)))
                 resList.append('Output script = ' + tmpHex)
+
+                walletAddress = publicKeyDecode(tmpHex);
+                resList.append('receiver address = ' + walletAddress)
+
                 RawTX = RawTX + tmpHex
                 tmpHex = ''
             if Witness == True:
@@ -345,6 +399,10 @@ for i in fList:
             tmpHex = tmpHex.upper()
             tmpHex = reverse(tmpHex)
             resList.append('TX hash = ' + tmpHex)
+            # test for first reqular transaction
+            #if tmpHex == 'f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16'.upper() :
+            #    txJson = publicKeyDecode();
+            #    resList.append('Tx detail = ' + txJson)
             tx_hashes.append(tmpHex)
             tmpHex = ''
             resList.append('')
@@ -352,7 +410,6 @@ for i in fList:
         a += 1
         tx_hashes = [h.decode('hex') for h in tx_hashes]
         if MerkleRoot != '0000000000000000000000000000000000000000000000000000000000000000':
-
             tmpHex = merkle_root(tx_hashes).encode('hex').upper()
             if tmpHex != MerkleRoot:
                 print ('Merkle roots does not match! >',MerkleRoot,tmpHex)
