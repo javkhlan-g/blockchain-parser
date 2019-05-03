@@ -10,6 +10,7 @@ import hashlib
 from datetime import datetime
 import base58 as base58
 import binascii
+from bitcoin_tools.core.transaction import TX
 
 
 def startsWithOpNCode(pub):
@@ -82,9 +83,9 @@ def merkle_root(lst): # https://gist.github.com/anonymous/7eb080a67398f648c1709e
         lst.append(lst[-1])
     return merkle_root([hash_pair(x,y) for x, y in zip(*[iter(lst)]*2)])
 
-dirA = 'C:/dev/blockchain-parser/' # Directory where blk*.dat files are stored
+dirA = '/home/gcb/blockchain-parser/' # Directory where blk*.dat files are stored
 #dirA = sys.argv[1]
-dirB = 'C:/dev/blockchain-parser/hash/' # Directory where to save parsing results
+dirB = '/home/gcb/blockchain-parser/hash' # Directory where to save parsing results
 #dirA = sys.argv[2]
 
 fList = os.listdir(dirA)
@@ -407,6 +408,9 @@ for i in fList:
             tmpHex = ''
             resList.append('')
             resList.append('Raw Tx = ' + RawTX)
+            tx = TX.deserialize(RawTX)
+            #print tx.display()
+	    resList.append('decoded Tx = ' + str(tx.display()))	
             RawTX = ''
 			
         a += 1
