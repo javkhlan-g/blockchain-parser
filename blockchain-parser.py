@@ -406,7 +406,9 @@ for i in fList:
             tx_hashes.append(tmpHex)
             tmpHex = ''
             resList.append('')
+            resList.append('Raw Tx = ' + RawTX)
             RawTX = ''
+			
         a += 1
         tx_hashes = [h.decode('hex') for h in tx_hashes]
         if MerkleRoot != '0000000000000000000000000000000000000000000000000000000000000000':
