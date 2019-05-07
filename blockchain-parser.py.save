@@ -12,7 +12,6 @@ import base58 as base58
 import binascii
 from bitcoin_tools.core.transaction import TX
 
-
 def startsWithOpNCode(pub):
   try:
     intValue = int(pub[0:2], 16)
@@ -85,7 +84,7 @@ def merkle_root(lst): # https://gist.github.com/anonymous/7eb080a67398f648c1709e
 
 dirA = '/home/gcb/blockchain-parser/' # Directory where blk*.dat files are stored
 #dirA = sys.argv[1]
-dirB = '/home/gcb/blockchain-parser/hash' # Directory where to save parsing results
+dirB = '/home/gcb/blockchain-parser/hash/' # Directory where to save parsing results
 #dirA = sys.argv[2]
 
 fList = os.listdir(dirA)
@@ -407,12 +406,11 @@ for i in fList:
             tx_hashes.append(tmpHex)
             tmpHex = ''
             resList.append('')
-            resList.append('Raw Tx = ' + RawTX)
-            tx = TX.deserialize(RawTX)
-            tx.display()
-	    #resList.append('decoded Tx = ' + str(tx.display()))	
+	    tx = TX.deserialize(RawTX)
+		
+            print str(tx)  
+            #resList.append('tx='+tx)
             RawTX = ''
-			
         a += 1
         tx_hashes = [h.decode('hex') for h in tx_hashes]
         if MerkleRoot != '0000000000000000000000000000000000000000000000000000000000000000':
